@@ -31,11 +31,7 @@ cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-Visit [http://localhost:8000/docs](http://localhost:8000/docs) for the API documentation.
 
-## Documentation
-
-See [PROJECT_CONTEXT.md](./PROJECT_CONTEXT.md) for architecture, coding standards, and folder responsibilities.
 
 ## License
 
