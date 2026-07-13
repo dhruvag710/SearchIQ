@@ -1,38 +1,77 @@
 # SearchIQ
 
-Enterprise-grade hybrid search RAG platform built for production.
+SearchIQ is a document intelligence system that indexes documents and provides accurate, citation-backed answers using modern Retrieval-Augmented Generation (RAG) techniques.
 
-## Overview
+> **Project Status:** 🚧 In Development
 
-SearchIQ combines keyword search, vector retrieval, reranking, and answer verification into a single platform for building reliable retrieval-augmented generation systems.
+---
+
+## Current Features
+
+### Document Ingestion
+- PDF upload with validation
+- Modular parser architecture
+- PDF parsing with PyMuPDF
+- Extensible support for DOCX, TXT, and Markdown
+
+### Document Processing
+- Text cleaning pipeline
+- Custom recursive chunking engine
+- Page-aware chunk metadata
+- Word-preserving chunk overlap
+
+### Backend
+- FastAPI
+- PostgreSQL + pgvector infrastructure
+- SQLAlchemy ORM
+- Alembic migrations
+
+---
+
+## Planned Features
+
+- BGE embedding generation
+- Hybrid retrieval (Vector + BM25)
+- Cross-encoder reranking
+- Citation-backed answers
+- React frontend
+- Dockerized deployment
+
+---
+
+## Tech Stack
+
+- Python
+- FastAPI
+- PostgreSQL
+- pgvector
+- SQLAlchemy
+- Alembic
+- PyMuPDF
+
+---
 
 ## Project Structure
 
-```
+```text
 SearchIQ/
-├── backend/          # FastAPI application
-├── frontend/         # Web client (future)
-├── docs/             # Documentation
-├── infrastructure/   # Deployment and ops (future)
-├── data/             # Raw, processed, and sample documents
-└── tests/            # Test suite
+├── backend/
+├── frontend/
+├── docs/
+├── data/
+└── tests/
 ```
 
-## Quick Start
+---
+
+## Getting Started
 
 ### Backend
 
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env
 uvicorn app.main:app --reload
 ```
-
-
-
-## License
-
-Proprietary. All rights reserved.
