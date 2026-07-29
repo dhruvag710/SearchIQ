@@ -184,17 +184,6 @@ OPENROUTER_MODEL=your_model_name
 python -m uvicorn app.main:app --reload
 ```
 
----
-
-## Future Improvements
-
-- Support for DOCX, TXT and Markdown documents
-- Hybrid retrieval (Vector + BM25)
-- Multi-document search
-- Streaming responses
-- Conversation history
-- Frontend interface
-- Docker deployment
 
 ---
 
