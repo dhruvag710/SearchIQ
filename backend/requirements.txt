@@ -7,4 +7,4 @@ alembic
 psycopg[binary]
 pgvector
 sentence-transformers
-google-genai
+openai

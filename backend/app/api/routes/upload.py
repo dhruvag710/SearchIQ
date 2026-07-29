@@ -2,9 +2,12 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
 
+from app.database.session import get_db
 from app.schemas.upload import DocumentUploadResponse
+from app.services.indexing_service import index_document
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -24,6 +27,7 @@ RAW_UPLOAD_DIR = PROJECT_ROOT / "data" / "raw"
 )
 async def upload_document(
     file: UploadFile = File(..., description="PDF file to upload (max 50 MB)"),
+    db: Session = Depends(get_db),
 ) -> DocumentUploadResponse:
     """Accept a PDF file, validate it, and persist it under ``data/raw/``."""
     if file.content_type != ALLOWED_CONTENT_TYPE:
@@ -75,11 +79,24 @@ async def upload_document(
             detail="Uploaded file is empty.",
         )
 
+    try:
+        index_document(
+            file_path=destination,
+            db=db,
+            document_id=document_id,
+        )
+    except Exception as exc:
+        destination.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to index uploaded document.",
+        ) from exc
+
     return DocumentUploadResponse(
         document_id=document_id,
         original_filename=original_filename,
         stored_filename=stored_filename,
         file_size_bytes=file_size_bytes,
         uploaded_at=datetime.now(timezone.utc).isoformat(),
-        status="uploaded",
+        status="indexed",
     )
