@@ -7,8 +7,11 @@ from sqlalchemy.orm import Session
 from app.chunking.chunker import chunk_document
 from app.chunking.models import Chunk as ChunkDTO
 from app.embeddings.service import embed_chunks
+from app.ingestion.docx_parser import parse_docx
+from app.ingestion.markdown_parser import parse_markdown
 from app.ingestion.models import Document as ParsedDocument
 from app.ingestion.parser import parse_pdf
+from app.ingestion.txt_parser import parse_txt
 from app.models.chunk import Chunk as ChunkRecord
 from app.models.document import Document as DocumentRecord
 
@@ -76,6 +79,12 @@ def _parse_document(file_path: Path) -> tuple[ParsedDocument, str]:
     suffix = file_path.suffix.lower()
     if suffix == ".pdf":
         return parse_pdf(file_path), "pdf"
+    if suffix == ".docx":
+        return parse_docx(file_path), "docx"
+    if suffix == ".txt":
+        return parse_txt(file_path), "txt"
+    if suffix == ".md":
+        return parse_markdown(file_path), "md"
     raise ValueError(f"Unsupported file type for indexing: {suffix!r}")
 
 

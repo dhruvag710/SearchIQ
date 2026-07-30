@@ -11,7 +11,13 @@ from app.services.indexing_service import index_document
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-ALLOWED_CONTENT_TYPE = "application/pdf"
+ALLOWED_CONTENT_TYPES = {
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "text/markdown",
+}
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md"}
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 CHUNK_SIZE_BYTES = 1024 * 1024
 
@@ -23,28 +29,29 @@ RAW_UPLOAD_DIR = PROJECT_ROOT / "data" / "raw"
     "/upload",
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Upload a PDF document",
+    summary="Upload a document",
 )
 async def upload_document(
-    file: UploadFile = File(..., description="PDF file to upload (max 50 MB)"),
+    file: UploadFile = File(..., description="Document file to upload (PDF, DOCX, TXT, MD - max 50 MB)"),
     db: Session = Depends(get_db),
 ) -> DocumentUploadResponse:
-    """Accept a PDF file, validate it, and persist it under ``data/raw/``."""
-    if file.content_type != ALLOWED_CONTENT_TYPE:
+    """Accept a document file (PDF, DOCX, TXT, MD), validate it, and persist it under ``data/raw/``."""
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Only PDF files are accepted. Received content type: {file.content_type!r}",
+            detail=f"Unsupported media type: {file.content_type!r}.",
         )
 
-    original_filename = file.filename or "unknown.pdf"
-    if not original_filename.lower().endswith(".pdf"):
+    original_filename = file.filename or "unknown.txt"
+    file_extension = Path(original_filename).suffix.lower()
+    if file_extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Only files with a .pdf extension are accepted.",
+            detail=f"Unsupported file extension: {file_extension!r}.",
         )
 
     document_id = str(uuid.uuid4())
-    stored_filename = f"{document_id}.pdf"
+    stored_filename = f"{document_id}{file_extension}"
     destination = RAW_UPLOAD_DIR / stored_filename
 
     RAW_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -100,3 +107,4 @@ async def upload_document(
         uploaded_at=datetime.now(timezone.utc).isoformat(),
         status="indexed",
     )
+
