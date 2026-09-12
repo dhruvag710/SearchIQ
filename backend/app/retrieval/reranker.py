@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 from sentence_transformers import CrossEncoder
 
@@ -39,24 +40,26 @@ class CrossEncoderReranker:
     def rerank(
         self,
         query: str,
-        results: list[HybridSearchResult],
+        results: list[Any],
         top_k: int = 5,
     ) -> list[RerankedResult]:
         """Score query-chunk pairs and return the top-k results by reranker score."""
         if not results:
             return []
 
-        pairs = [(query, result.text) for result in results]
+        pairs = [(query, getattr(result, "text", "")) for result in results]
         scores = self._get_model().predict(pairs, show_progress_bar=False)
 
         reranked_results = [
             RerankedResult(
-                chunk_id=result.chunk_id,
-                document_id=result.document_id,
-                page_number=result.page_number,
-                chunk_index=result.chunk_index,
-                text=result.text,
-                hybrid_score=result.final_score,
+                chunk_id=str(getattr(result, "id", getattr(result, "chunk_id", ""))),
+                document_id=str(getattr(result, "document_id", "")),
+                page_number=getattr(result, "page_number", 0),
+                chunk_index=getattr(result, "chunk_index", 0),
+                text=getattr(result, "text", ""),
+                hybrid_score=float(
+                    getattr(result, "final_score", getattr(result, "hybrid_score", 0.0))
+                ),
                 reranker_score=float(score),
             )
             for result, score in zip(results, scores, strict=True)

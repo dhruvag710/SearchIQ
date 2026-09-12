@@ -1,0 +1,98 @@
+{
+  "dataset_name": "searchiq_resume_golden",
+  "description": "Ground truth retrieval evaluation dataset based on indexed candidate resume",
+  "test_cases": [
+    {
+      "id": "q001",
+      "question": "What is Dhruv Agarwal's GPA and which institute is he pursuing his B.Tech from?",
+      "relevant_chunk_ids": [
+        "0a7982ab-dd8f-4304-a750-f0b323401495"
+      ],
+      "query_type": "keyword",
+      "notes": "Covers education details in chunk 0"
+    },
+    {
+      "id": "q002",
+      "question": "What is Dhruv's current internship/research role and what is he building?",
+      "relevant_chunk_ids": [
+        "0a7982ab-dd8f-4304-a750-f0b323401495",
+        "6ef8e425-0775-43ab-a2b1-0f8ece54461a"
+      ],
+      "query_type": "semantic",
+      "notes": "Covers current internship role spanning chunks 0 and 1"
+    },
+    {
+      "id": "q003",
+      "question": "What were the results of Dhruv's LLM-powered email automation system during his Machine Learning internship?",
+      "relevant_chunk_ids": [
+        "6ef8e425-0775-43ab-a2b1-0f8ece54461a"
+      ],
+      "query_type": "complex",
+      "notes": "Covers ML internship results in chunk 1"
+    },
+    {
+      "id": "q004",
+      "question": "What programming languages and frameworks does Dhruv list in his skills?",
+      "relevant_chunk_ids": [
+        "705bc0a2-2196-460e-aa51-d946438cf424"
+      ],
+      "query_type": "keyword",
+      "notes": "Covers technical skills section in chunk 2"
+    },
+    {
+      "id": "q005",
+      "question": "What databases, cloud platforms, and vector databases does Dhruv have experience with?",
+      "relevant_chunk_ids": [
+        "705bc0a2-2196-460e-aa51-d946438cf424"
+      ],
+      "query_type": "keyword",
+      "notes": "Covers database and cloud skills in chunk 2"
+    },
+    {
+      "id": "q006",
+      "question": "What is maileazy.ai and what does it do?",
+      "relevant_chunk_ids": [
+        "878ced7f-1fec-40bf-84ca-539c30f3c0a1"
+      ],
+      "query_type": "semantic",
+      "notes": "Covers maileazy.ai project description in chunk 3"
+    },
+    {
+      "id": "q007",
+      "question": "How does the maileazy.ai project classify and process Gmail emails?",
+      "relevant_chunk_ids": [
+        "878ced7f-1fec-40bf-84ca-539c30f3c0a1"
+      ],
+      "query_type": "complex",
+      "notes": "Covers email classification mechanism in chunk 3"
+    },
+    {
+      "id": "q008",
+      "question": "What technologies were used to build maileazy.ai?",
+      "relevant_chunk_ids": [
+        "878ced7f-1fec-40bf-84ca-539c30f3c0a1"
+      ],
+      "query_type": "keyword",
+      "notes": "Covers maileazy.ai tech stack in chunk 3"
+    },
+    {
+      "id": "q009",
+      "question": "What does the Internship Email Processor & Resume Scanner project do?",
+      "relevant_chunk_ids": [
+        "145eeafd-d784-4567-a0cd-d9815c223dd2",
+        "5269559a-a3b7-4d21-af94-54ea08e08523"
+      ],
+      "query_type": "complex",
+      "notes": "Covers Resume Scanner project spanning chunks 4 and 5"
+    },
+    {
+      "id": "q010",
+      "question": "How does the Internship Email Processor & Resume Scanner evaluate candidates?",
+      "relevant_chunk_ids": [
+        "145eeafd-d784-4567-a0cd-d9815c223dd2"
+      ],
+      "query_type": "semantic",
+      "notes": "Covers candidate evaluation logic in chunk 4"
+    }
+  ]
+}

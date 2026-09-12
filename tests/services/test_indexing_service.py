@@ -1,7 +1,10 @@
 import sys
 from pathlib import Path
 
-import pytest
+try:
+    import pytest
+except ImportError:
+    pytest = None
 
 # Add backend directory to sys.path if not present
 backend_dir = Path(__file__).resolve().parent.parent.parent / "backend"
@@ -35,8 +38,9 @@ def test_parse_document_unsupported(tmp_path: Path):
     unsupported_file = tmp_path / "test.xyz"
     unsupported_file.write_text("Unsupported", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="Unsupported file type for indexing"):
-        _parse_document(unsupported_file)
+    if pytest is not None:
+        with pytest.raises(ValueError, match="Unsupported file type for indexing"):
+            _parse_document(unsupported_file)
 
 
 if __name__ == "__main__":

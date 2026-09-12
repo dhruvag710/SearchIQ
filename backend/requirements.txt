@@ -9,3 +9,4 @@ pgvector
 sentence-transformers
 openai
 python-docx
+rank-bm25
