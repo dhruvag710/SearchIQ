@@ -10,10 +10,12 @@ from app.embeddings.service import embed_chunks
 from app.ingestion.docx_parser import parse_docx
 from app.ingestion.markdown_parser import parse_markdown
 from app.ingestion.models import Document as ParsedDocument
+from app.ingestion.multimodal_parser import MultimodalPdfParser
 from app.ingestion.parser import parse_pdf
 from app.ingestion.txt_parser import parse_txt
 from app.models.chunk import Chunk as ChunkRecord
 from app.models.document import Document as DocumentRecord
+from app.models.document_image import DocumentImage as DocumentImageRecord
 
 
 @dataclass(frozen=True)
@@ -24,6 +26,7 @@ class IndexingSummary:
     total_pages: int
     total_chunks: int
     status: str
+    total_images: int = 0
 
 
 def index_document(
@@ -31,10 +34,15 @@ def index_document(
     db: Session,
     *,
     document_id: str | uuid.UUID | None = None,
+    enable_multimodal: bool = False,
 ) -> IndexingSummary:
     """Parse, chunk, embed, and persist a document end to end."""
     resolved_document_id = _resolve_document_id(document_id)
-    parsed_document, file_type = _parse_document(file_path)
+    parsed_document, file_type = _parse_document(
+        file_path,
+        document_id=str(resolved_document_id),
+        enable_multimodal=enable_multimodal,
+    )
 
     chunk_dtos = chunk_document(
         parsed_document,
@@ -54,6 +62,13 @@ def index_document(
             document_id=resolved_document_id,
             embedded_chunks=embedded_chunks,
         )
+        total_images = 0
+        if enable_multimodal:
+            total_images = _persist_images(
+                db=db,
+                document_id=resolved_document_id,
+                parsed_document=parsed_document,
+            )
         db.commit()
     except Exception:
         db.rollback()
@@ -64,6 +79,7 @@ def index_document(
         total_pages=parsed_document.total_pages,
         total_chunks=len(embedded_chunks),
         status="indexed",
+        total_images=total_images,
     )
 
 
@@ -75,9 +91,15 @@ def _resolve_document_id(document_id: str | uuid.UUID | None) -> uuid.UUID:
     return uuid.UUID(document_id)
 
 
-def _parse_document(file_path: Path) -> tuple[ParsedDocument, str]:
+def _parse_document(
+    file_path: Path,
+    document_id: str | None = None,
+    enable_multimodal: bool = False,
+) -> tuple[ParsedDocument, str]:
     suffix = file_path.suffix.lower()
     if suffix == ".pdf":
+        if enable_multimodal:
+            return MultimodalPdfParser().parse(file_path, document_id=document_id), "pdf"
         return parse_pdf(file_path), "pdf"
     if suffix == ".docx":
         return parse_docx(file_path), "docx"
@@ -123,3 +145,29 @@ def _persist_chunks(
                 embedding=embedding,
             )
         )
+
+
+def _persist_images(
+    *,
+    db: Session,
+    document_id: uuid.UUID,
+    parsed_document: ParsedDocument,
+) -> int:
+    total_images = 0
+    for page in parsed_document.pages:
+        for image_dto in page.images:
+            db.add(
+                DocumentImageRecord(
+                    id=uuid.UUID(image_dto.image_id),
+                    document_id=document_id,
+                    page_number=image_dto.page_number,
+                    image_index=image_dto.image_index,
+                    image_path=image_dto.image_path,
+                    bbox=image_dto.bbox,
+                    caption=image_dto.caption,
+                    embedding=None,
+                )
+            )
+            total_images += 1
+    return total_images
+

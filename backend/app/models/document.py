@@ -34,3 +34,9 @@ class Document(Base):
         back_populates="document",
         cascade="all, delete-orphan",
     )
+    images: Mapped[list["DocumentImage"]] = relationship(
+        "DocumentImage",
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
+
