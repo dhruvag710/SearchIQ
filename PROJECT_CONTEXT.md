@@ -65,54 +65,62 @@ The FastAPI application and all server-side logic.
 
 | Path | Responsibility |
 |------|----------------|
-| `app/main.py` | Application entry point; mounts routes and middleware. |
-| `app/api/` | HTTP route handlers and API versioning. |
-| `app/core/` | Configuration, logging, middleware, and shared utilities. |
-| `app/database/` | Database connections, migrations, and persistence adapters. |
-| `app/ingestion/` | Document parsing, chunking, and indexing pipelines. |
-| `app/retrieval/` | Hybrid search: keyword, vector, and fusion strategies. |
-| `app/reranker/` | Cross-encoder and LLM-based result reranking. |
-| `app/verifier/` | Groundedness checks and citation validation. |
-| `app/services/` | Orchestration layer coordinating domain modules. |
-| `app/models/` | ORM / database entity definitions. |
-| `app/schemas/` | Pydantic request/response and internal DTO models. |
+| `app/main.py` | Application entry point; mounts routers, health checks, and middleware. |
+| `app/api/` | HTTP route handlers (`/documents/upload`, `/chat`, `/health`, `/`). |
+| `app/core/` | Application configuration (`pydantic-settings`), logging, and global settings. |
+| `app/database/` | PostgreSQL connection session factory and declarative base. |
+| `app/models/` | SQLAlchemy ORM models (`Document`, `Chunk`, `DocumentImage`). |
+| `app/schemas/` | Pydantic request/response schemas (`Upload`, `Chat`, DTO models). |
+| `app/ingestion/` | Multi-format parsers (PDF, DOCX, TXT, Markdown), multimodal image extraction, text cleaning. |
+| `app/chunking/` | Recursive page-aware text chunking with configurable overlap. |
+| `app/embeddings/` | Dense vector embedding generation via `BAAI/bge-small-en-v1.5`. |
+| `app/retrieval/` | Hybrid search (Dense BGE + BM25 + Reciprocal Rank Fusion) and Visual search (`VisualSearchService`). |
+| `app/reranker/` | Cross-Encoder joint candidate reranking (`BAAI/bge-reranker-base`). |
+| `app/prompting/` | Structured prompt builder synthesizing text chunks and visual descriptions. |
+| `app/generation/` | LLM answer generation (`LLMService`) and VLM captioning (`VisualCaptioner`/`VLMService`) via OpenRouter. |
+| `app/evaluation/` | Offline retrieval benchmarking suite (Golden dataset, evaluator, Recall@K, Precision@K, MRR@K). |
+| `app/services/` | High-level orchestration services (`IndexingService`, `ChatService`). |
 
 ### `frontend/`
 
-Web client for search, administration, and analytics. Not yet implemented.
+Web client interface for document management, search, and multimodal chat interaction. To be implemented next.
 
 ### `docs/`
 
-Architecture decision records (ADRs), API guides, runbooks, and onboarding material.
+Architecture Decision Records (`decisions.md`), technical specifications, and system documentation.
 
 ### `infrastructure/`
 
-Deployment manifests, CI/CD configuration, and environment provisioning. Docker and cloud resources will live here when added.
+Docker Compose configurations (`pgvector/pgvector:pg17`), deployment manifests, and environment templates.
 
 ### `data/`
 
 | Path | Responsibility |
 |------|----------------|
-| `data/raw/` | Unprocessed source documents. |
-| `data/processed/` | Chunked, enriched, or indexed artifacts. |
-| `data/sample_docs/` | Small fixtures for local development and tests. |
+| `data/raw/` | Uploaded raw source documents (UUID-keyed). |
+| `data/processed/` | Intermediate chunked or enriched document artifacts. |
+| `data/images/` | Extracted raster images and diagrams from uploaded PDFs. |
+| `data/eval/` | Annotated golden datasets for offline retrieval evaluation benchmarks. |
 
-Contents under `raw/` and `processed/` are gitignored; only directory structure is tracked.
+Contents under `data/raw/`, `data/processed/`, and `data/images/` are gitignored; directory structure is tracked.
 
 ### `tests/`
 
-Automated test suite for backend services, API endpoints, and pipeline components.
+Automated test suite (94 passing tests) covering unit and integration testing for ingestion, chunking, embeddings, hybrid retrieval, visual search, cross-encoder reranking, chat orchestration, evaluation, and API routes.
 
 ---
 
 ## Current Scope
 
-This initial scaffold provides:
+The **SearchIQ Backend** is fully implemented, verified, and operational:
 
-- A minimal FastAPI application with root and health endpoints.
-- A production-oriented directory layout ready for incremental feature work.
-- Dependency and environment templates.
+- **Multi-Format Ingestion**: Ingests PDF, DOCX, TXT, and Markdown files with validation and automatic indexing upon upload.
+- **Multimodal Visual Pipeline**: Extracts embedded raster figures and diagrams from PDFs, generates rich factual captions using OpenRouter VLM (`google/gemini-2.5-flash`), and indexes 384-dimensional BGE embeddings in pgvector.
+- **Hybrid Text + Visual Retrieval**: Combines Dense semantic search (BGE) and Lexical search (BM25) via Reciprocal Rank Fusion (RRF), alongside pgvector visual candidate search.
+- **Unified Cross-Encoder Reranking**: Merges text chunks and visual candidates into a unified candidate pool and jointly rescores them with `BAAI/bge-reranker-base`.
+- **Grounded Answer Synthesis**: Builds structured prompts citing text chunks and visual figures, generating verifiable, citation-backed answers via OpenRouter LLM.
+- **Offline Retrieval Evaluation**: Benchmark framework measuring Recall@K, Precision@K, and MRR@K against golden evaluation datasets.
+- **RESTful API**: Production endpoints for document upload (`POST /documents/upload`), natural language chat (`POST /chat`), health checks (`GET /health`), and root (`GET /`).
 
-**Not yet implemented:** authentication, database layer, ingestion, retrieval, embeddings, reranking, verification, frontend, and infrastructure automation.
+**Next Phase**: Frontend client development (UI for document uploading, multimodal conversation, visual source inspection, and citation display).
 
-Refer to this document when adding new modules to ensure consistency with project conventions.

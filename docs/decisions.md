@@ -78,15 +78,15 @@ This document records the key architectural and technical decisions made during 
 
 ## D010 - Retrieval Strategy
 
-**Choice:** Dense vector retrieval using pgvector followed by cross-encoder reranking.
+**Choice:** Hybrid retrieval combining Dense vector search (`BAAI/bge-small-en-v1.5`) and BM25 lexical search via Reciprocal Rank Fusion (RRF), followed by Cross-Encoder reranking.
 
-**Reason:** Dense retrieval efficiently identifies semantically relevant chunks, while reranking improves result quality before passing context to the language model.
+**Reason:** Combining lexical BM25 and semantic dense search maximizes candidate recall across keyword-heavy and concept-based queries, while Reciprocal Rank Fusion provides robust, scale-invariant score merging.
 
 ---
 
 ## D011 - Reranking Model
 
-**Choice:** Cross-Encoder reranker from Sentence Transformers.
+**Choice:** Cross-Encoder reranker (`BAAI/bge-reranker-base`) from Sentence Transformers.
 
 **Reason:** Scores retrieved chunks jointly with the user query, producing more accurate rankings than embedding similarity alone.
 
@@ -121,3 +121,35 @@ This document records the key architectural and technical decisions made during 
 **Choice:** Separate ingestion, chunking, embeddings, retrieval, reranking, generation, and API into independent modules.
 
 **Reason:** Promotes separation of concerns, improves maintainability, and allows individual components to evolve independently.
+
+---
+
+## D016 - Multimodal PDF Understanding and Visual Indexing
+
+**Choice:** Extract embedded raster images from PDFs using PyMuPDF, generate dense factual descriptions via OpenRouter VLM (`google/gemini-2.5-flash`), compute `bge-small-en-v1.5` embeddings for the captions, and store them in the `document_images` table with pgvector embeddings.
+
+**Reason:** Captures critical document knowledge trapped in embedded figures, charts, and diagrams into searchable semantic representations without requiring high-latency multi-modal vector models at query time.
+
+---
+
+## D017 - Unified Text and Visual Candidate Reranking
+
+**Choice:** Merge top text candidates from `HybridRetriever` with top visual candidates from `VisualSearchService` into a unified candidate pool, and jointly score them using `BAAI/bge-reranker-base`.
+
+**Reason:** Allows the cross-encoder to evaluate text chunks and visual image captions against the query in the same scoring pass, ensuring the most relevant context wins regardless of its source modality.
+
+---
+
+## D018 - Multi-format Document Parsing
+
+**Choice:** Implement dedicated, modular parsers for PDF (`MultimodalPdfParser` / `PdfParser`), DOCX (`DocxParser`), Markdown (`MarkdownParser`), and Plain Text (`TxtParser`) conforming to a common `DocumentParser` interface.
+
+**Reason:** Broadens document support across common enterprise file types while isolating format-specific dependencies and producing standardized text pages for downstream chunking.
+
+---
+
+## D019 - Retrieval Evaluation Framework
+
+**Choice:** Build an offline benchmark suite (`app/evaluation/`) calculating Recall@K, Precision@K, and MRR@K across Dense, BM25, Hybrid (RRF), and Hybrid + Reranker strategies using golden annotated test cases.
+
+**Reason:** Provides empirical verification of retrieval accuracy and latency trade-offs, validating that reranking yields measurable precision improvements on domain data.
