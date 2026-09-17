@@ -13,6 +13,8 @@ class ChatSourceResponse(BaseModel):
     document_id: str
     page_number: int
     chunk_index: int
+    is_visual: bool = False
+    image_path: str | None = None
 
 
 class ChatResponse(BaseModel):
