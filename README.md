@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white" alt="Python Version" />
   <img src="https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/PostgreSQL-pgvector-336791?style=flat&logo=postgresql&logoColor=white" alt="pgvector" />
-  <img src="https://img.shields.io/badge/Tests-94%20Passing-brightgreen?style=flat" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-106%20Passing-brightgreen?style=flat" alt="Tests" />
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" />
 </p>
 
@@ -19,13 +19,15 @@
 
 **SearchIQ** is an enterprise-grade **Multimodal Hybrid RAG** system designed for high-accuracy document intelligence and question answering across organizational knowledge bases.
 
-Beyond standard text-only retrieval, SearchIQ understands both text and visual content embedded within documents (e.g., charts, diagrams, and figures in PDFs). It indexes document text alongside VLM-generated visual captions in a unified vector space, combines lexical search (BM25) and dense semantic search (BGE) via **Reciprocal Rank Fusion (RRF)**, rescores unified candidate pools using a **Cross-Encoder Reranker**, and synthesizes citation-backed answers via Large Language Models.
+Beyond standard text-only retrieval, SearchIQ understands text, structured tables, and visual content embedded within documents (e.g., charts, diagrams, and figures in PDFs). It indexes document text alongside VLM-generated visual captions in a unified vector space, combines lexical search (BM25) and dense semantic search (BGE) via **Reciprocal Rank Fusion (RRF)**, rescores unified candidate pools using a **Cross-Encoder Reranker**, and synthesizes citation-backed answers via Large Language Models.
 
 ---
 
 ## Key Features
 
 - **Multi-Format Ingestion**: Supports PDF, DOCX, TXT, and Markdown documents with format validation and immediate background indexing.
+- **Table-Aware PDF Ingestion**: Detects digital PDF tables using PyMuPDF and converts them into structured GitHub-flavored Markdown. Line-level spatial filtering preserves surrounding prose without duplicating cell text or disrupting natural reading order.
+- **Header-Preserving Table Chunking**: Eliminates table header decapitation. Small tables remain intact within chunks; oversized tables are split row-by-row with column headers and delimiter rows replicated across subsequent chunks to preserve cell-metric relationships for retrieval.
 - **Multimodal PDF Understanding**: Automatically extracts embedded raster images and figures from PDFs during ingestion.
 - **VLM Visual Captioning**: Employs an OpenRouter Vision-Language Model (`google/gemini-2.5-flash`) to generate detailed, factual descriptions of diagrams, tables, and charts.
 - **Dense BGE Embeddings**: Generates 384-dimensional dense vector embeddings (`BAAI/bge-small-en-v1.5`) for both text chunks and visual captions.
@@ -45,13 +47,14 @@ Beyond standard text-only retrieval, SearchIQ understands both text and visual c
                 ↓
       Multi-format Ingestion
                 ↓
-  ┌──────────────────────┬──────────────────────┐
-  │ Text Pipeline        │ Visual Pipeline      │
-  │ • Cleaning           │ • Image extraction   │
-  │ • Recursive chunking │ • VLM captioning     │
-  │ • BGE embeddings     │ • BGE embeddings     │
-  │ • BM25 + pgvector    │ • pgvector           │
-  └──────────┬───────────┴──────────┬───────────┘
+  ┌──────────────────────────────────┬──────────────────────┐
+  │ Text & Tabular Pipeline          │ Visual Pipeline      │
+  │ • Spatial cleaning & filtering   │ • Image extraction   │
+  │ • Table detection & Markdown     │ • VLM captioning     │
+  │ • Header-preserved row chunking  │ • BGE embeddings     │
+  │ • BGE embeddings                 │ • pgvector           │
+  │ • BM25 + pgvector                │                      │
+  └────────────────┬─────────────────┴──────────┬───────────┘
              ↓                      ↓
        Hybrid Text Retrieval   Visual Retrieval
        (Dense + BM25 → RRF)   (pgvector)
@@ -82,7 +85,8 @@ Beyond standard text-only retrieval, SearchIQ understands both text and visual c
 | **Embeddings** | `BAAI/bge-small-en-v1.5` | 384-dimensional dense semantic representations |
 | **Reranker** | `BAAI/bge-reranker-base` | Cross-encoder joint query-context scoring |
 | **Lexical Search** | `rank-bm25` | In-memory BM25 retrieval for exact terminology |
-| **Document Parsers** | PyMuPDF, python-docx, markdown | Multi-format parsing and PDF raster image extraction |
+| **Document Parsers** | PyMuPDF, python-docx, markdown | Multi-format parsing, table detection/Markdown conversion, and PDF image extraction |
+| **Chunking Engine** | Custom recursive chunker | Page-scoped prose chunking & header-preserving row chunking for large tables |
 | **VLM & LLM** | OpenRouter (`gemini-2.5-flash`) | Visual asset captioning and grounded answer synthesis |
 | **Testing** | pytest, pytest-asyncio | Unit, integration, and API route test suites |
 
@@ -117,7 +121,7 @@ SearchIQ
 │   ├── images/                 # Extracted PDF images
 │   └── eval/                   # Golden evaluation datasets
 ├── docker-compose.yml          # PostgreSQL + pgvector container
-└── tests/                      # Automated test suite (94 tests)
+└── tests/                      # Automated test suite (106 tests)
 ```
 
 ---
@@ -277,7 +281,7 @@ pytest
 ```
 
 ```text
-94 passed, 1 warning in 21.76s
+106 passed in 33.81s
 ```
 
 ---
