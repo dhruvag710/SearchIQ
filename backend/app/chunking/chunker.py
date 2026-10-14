@@ -59,6 +59,9 @@ def _chunk_page_text(text: str) -> list[str]:
                 chunk_text = _join_parts(current_parts)
                 chunks.append(chunk_text)
                 overlap_prefix = _overlap_prefix(chunk_text)
+                if _is_markdown_table(unit) or _is_markdown_table(chunk_text):
+                    overlap_prefix = ""
+
                 if (
                     overlap_prefix
                     and len(overlap_prefix) + _separator_length([overlap_prefix]) + len(unit)
@@ -84,6 +87,50 @@ def _chunk_page_text(text: str) -> list[str]:
     return chunks
 
 
+def _is_markdown_table(text: str) -> bool:
+    """Check whether a text block represents a Markdown table."""
+    lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
+    if len(lines) < 2:
+        return False
+    first_line = lines[0]
+    second_line = lines[1]
+    if not (first_line.startswith("|") and first_line.endswith("|")):
+        return False
+    if not (second_line.startswith("|") and second_line.endswith("|")):
+        return False
+    separator_content = second_line.replace("|", "").replace(" ", "").replace("-", "").replace(":", "")
+    return separator_content == ""
+
+
+def _split_markdown_table(table_text: str, max_size: int = TARGET_CHUNK_SIZE) -> list[str]:
+    """Split an oversized Markdown table by rows, repeating the header in each chunk."""
+    lines = [line.strip() for line in table_text.strip().splitlines() if line.strip()]
+    if len(lines) <= 2:
+        return [table_text]
+
+    header_block = lines[0] + "\n" + lines[1]
+    header_length = len(header_block)
+
+    chunks: list[str] = []
+    current_rows: list[str] = []
+    current_length = header_length
+
+    for row in lines[2:]:
+        row_length = len(row) + 1
+        if current_rows and (current_length + row_length > max_size):
+            chunks.append(header_block + "\n" + "\n".join(current_rows))
+            current_rows = [row]
+            current_length = header_length + row_length
+        else:
+            current_rows.append(row)
+            current_length += row_length
+
+    if current_rows:
+        chunks.append(header_block + "\n" + "\n".join(current_rows))
+
+    return chunks
+
+
 def _text_to_units(text: str) -> list[str]:
     """Decompose page text into units that respect the chunk size limit."""
     stripped_text = text.strip()
@@ -92,6 +139,13 @@ def _text_to_units(text: str) -> list[str]:
 
     units: list[str] = []
     for paragraph in _split_paragraphs(stripped_text):
+        if _is_markdown_table(paragraph):
+            if len(paragraph) <= TARGET_CHUNK_SIZE:
+                units.append(paragraph)
+            else:
+                units.extend(_split_markdown_table(paragraph, TARGET_CHUNK_SIZE))
+            continue
+
         if len(paragraph) <= TARGET_CHUNK_SIZE:
             units.append(paragraph)
             continue
