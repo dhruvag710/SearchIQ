@@ -2,7 +2,7 @@
 
 FastAPI backend for the **SearchIQ Multimodal Hybrid Search RAG** platform.
 
-The backend provides production-grade document ingestion (PDF, DOCX, TXT, Markdown), automated visual asset extraction and VLM captioning, hybrid retrieval (Dense BGE + Lexical BM25 with Reciprocal Rank Fusion), visual similarity search, unified cross-encoder reranking, and citation-backed answer generation.
+The backend provides production-style document ingestion (PDF, DOCX, TXT, Markdown), automated visual asset extraction and VLM captioning, hybrid retrieval (Dense BGE + Lexical BM25 with Reciprocal Rank Fusion), visual similarity search, unified cross-encoder reranking, and citation-backed answer generation.
 
 ---
 
@@ -179,7 +179,7 @@ Query indexed documents using multimodal hybrid RAG. Retrieves relevant text chu
    - `VisualSearchService`: Runs dense vector search over visual image captions.
 4. **Unified Cross-Encoder Reranking**:
    - Candidate text chunks (top 25) and visual candidates (top 10) form a unified candidate pool (35 items).
-   - `CrossEncoderReranker` (`BAAI/bge-reranker-base`) jointly scores all candidates against the user query to select the top 5 most relevant items.
+   - `CrossEncoderReranker` (`cross-encoder/ms-marco-MiniLM-L-6-v2`) jointly scores all candidates against the user query to select the top 5 most relevant items.
 5. **Generation**:
    - `PromptBuilder` formats selected text and visual contexts with clear source indicators.
    - `LLMService` generates a grounded response with citations.
@@ -194,7 +194,7 @@ Query indexed documents using multimodal hybrid RAG. Retrieves relevant text chu
 pytest
 ```
 
-*(94 unit and API route tests passing)*
+*(106 automated tests passing)*
 
 ### Run Offline Retrieval Benchmark
 

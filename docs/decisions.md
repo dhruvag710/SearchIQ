@@ -86,7 +86,7 @@ This document records the key architectural and technical decisions made during 
 
 ## D011 - Reranking Model
 
-**Choice:** Cross-Encoder reranker (`BAAI/bge-reranker-base`) from Sentence Transformers.
+**Choice:** Cross-Encoder reranker (`cross-encoder/ms-marco-MiniLM-L-6-v2`) from Sentence Transformers.
 
 **Reason:** Scores retrieved chunks jointly with the user query, producing more accurate rankings than embedding similarity alone.
 
@@ -134,7 +134,7 @@ This document records the key architectural and technical decisions made during 
 
 ## D017 - Unified Text and Visual Candidate Reranking
 
-**Choice:** Merge top text candidates from `HybridRetriever` with top visual candidates from `VisualSearchService` into a unified candidate pool, and jointly score them using `BAAI/bge-reranker-base`.
+**Choice:** Merge top text candidates from `HybridRetriever` with top visual candidates from `VisualSearchService` into a unified candidate pool, and jointly score them using `cross-encoder/ms-marco-MiniLM-L-6-v2`.
 
 **Reason:** Allows the cross-encoder to evaluate text chunks and visual image captions against the query in the same scoring pass, ensuring the most relevant context wins regardless of its source modality.
 

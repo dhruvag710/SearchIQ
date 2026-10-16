@@ -2,7 +2,7 @@
 
 ## What Is SearchIQ?
 
-SearchIQ is an enterprise-grade **Hybrid Search RAG** platform designed for production workloads. It orchestrates document ingestion, hybrid retrieval (keyword + semantic), reranking, and answer verification to deliver accurate, grounded responses from organizational knowledge bases.
+SearchIQ is a production-style **Hybrid Search RAG** platform designed for document retrieval and question answering. It orchestrates document ingestion, hybrid retrieval (keyword + semantic), reranking, and answer verification to deliver accurate, grounded responses from organizational knowledge bases.
 
 The platform prioritizes reliability, observability, and clear separation of concerns so teams can evolve each stage independently without compromising system integrity.
 
@@ -74,8 +74,7 @@ The FastAPI application and all server-side logic.
 | `app/ingestion/` | Multi-format parsers (PDF, DOCX, TXT, Markdown), multimodal image extraction, text cleaning. |
 | `app/chunking/` | Recursive page-aware text chunking with configurable overlap. |
 | `app/embeddings/` | Dense vector embedding generation via `BAAI/bge-small-en-v1.5`. |
-| `app/retrieval/` | Hybrid search (Dense BGE + BM25 + Reciprocal Rank Fusion) and Visual search (`VisualSearchService`). |
-| `app/reranker/` | Cross-Encoder joint candidate reranking (`BAAI/bge-reranker-base`). |
+| `app/retrieval/` | Hybrid search (Dense BGE + in-memory BM25 + Reciprocal Rank Fusion), Cross-Encoder reranker (`cross-encoder/ms-marco-MiniLM-L-6-v2`), and Visual search (`VisualSearchService`). |
 | `app/prompting/` | Structured prompt builder synthesizing text chunks and visual descriptions. |
 | `app/generation/` | LLM answer generation (`LLMService`) and VLM captioning (`VisualCaptioner`/`VLMService`) via OpenRouter. |
 | `app/evaluation/` | Offline retrieval benchmarking suite (Golden dataset, evaluator, Recall@K, Precision@K, MRR@K). |
@@ -106,7 +105,7 @@ Contents under `data/raw/`, `data/processed/`, and `data/images/` are gitignored
 
 ### `tests/`
 
-Automated test suite (94 passing tests) covering unit and integration testing for ingestion, chunking, embeddings, hybrid retrieval, visual search, cross-encoder reranking, chat orchestration, evaluation, and API routes.
+Automated test suite (106 passing tests) covering unit and integration testing for ingestion, chunking, embeddings, hybrid retrieval, visual search, cross-encoder reranking, chat orchestration, evaluation, and API routes.
 
 ---
 
@@ -117,10 +116,10 @@ The **SearchIQ Backend** is fully implemented, verified, and operational:
 - **Multi-Format Ingestion**: Ingests PDF, DOCX, TXT, and Markdown files with validation and automatic indexing upon upload.
 - **Multimodal Visual Pipeline**: Extracts embedded raster figures and diagrams from PDFs, generates rich factual captions using OpenRouter VLM (`google/gemini-2.5-flash`), and indexes 384-dimensional BGE embeddings in pgvector.
 - **Hybrid Text + Visual Retrieval**: Combines Dense semantic search (BGE) and Lexical search (BM25) via Reciprocal Rank Fusion (RRF), alongside pgvector visual candidate search.
-- **Unified Cross-Encoder Reranking**: Merges text chunks and visual candidates into a unified candidate pool and jointly rescores them with `BAAI/bge-reranker-base`.
+- **Unified Cross-Encoder Reranking**: Merges text chunks and visual candidates into a unified candidate pool and jointly rescores them with `cross-encoder/ms-marco-MiniLM-L-6-v2`.
 - **Grounded Answer Synthesis**: Builds structured prompts citing text chunks and visual figures, generating verifiable, citation-backed answers via OpenRouter LLM.
 - **Offline Retrieval Evaluation**: Benchmark framework measuring Recall@K, Precision@K, and MRR@K against golden evaluation datasets.
-- **RESTful API**: Production endpoints for document upload (`POST /documents/upload`), natural language chat (`POST /chat`), health checks (`GET /health`), and root (`GET /`).
+- **RESTful API**: Production-style endpoints for document upload (`POST /documents/upload`), natural language chat (`POST /chat`), health checks (`GET /health`), and root (`GET /`).
 
 **Next Phase**: Frontend client development (UI for document uploading, multimodal conversation, visual source inspection, and citation display).
 

@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">SearchIQ</h1>
   <p align="center">
-    <strong>Production-Grade Multimodal Hybrid Search & Retrieval-Augmented Generation (RAG)</strong>
+    <strong>Production-Style Multimodal Hybrid Search & Retrieval-Augmented Generation (RAG)</strong>
   </p>
 </p>
 
@@ -17,24 +17,26 @@
 
 ## Overview
 
-**SearchIQ** is an enterprise-grade **Multimodal Hybrid RAG** system designed for high-accuracy document intelligence and question answering across organizational knowledge bases.
+**SearchIQ** is a production-style **Multimodal Hybrid RAG** system designed for high-accuracy document intelligence and question answering across organizational knowledge bases.
 
-Beyond standard text-only retrieval, SearchIQ understands text, structured tables, and visual content embedded within documents (e.g., charts, diagrams, and figures in PDFs). It indexes document text alongside VLM-generated visual captions in a unified vector space, combines lexical search (BM25) and dense semantic search (BGE) via **Reciprocal Rank Fusion (RRF)**, rescores unified candidate pools using a **Cross-Encoder Reranker**, and synthesizes citation-backed answers via Large Language Models.
+Beyond standard text-only retrieval, SearchIQ understands text, structured tables, and visual content embedded within documents (e.g., charts, diagrams, and figures in PDFs). It indexes document text alongside VLM-generated visual captions in a unified vector space, combines in-memory lexical search (BM25) and dense semantic search (BGE) via **Reciprocal Rank Fusion (RRF)**, rescores unified candidate pools using a **Cross-Encoder Reranker**, and synthesizes citation-backed answers via Large Language Models.
 
 ---
 
 ## Key Features
 
-- **Multi-Format Ingestion**: Supports PDF, DOCX, TXT, and Markdown documents with format validation and immediate background indexing.
+- **FastAPI Backend**: Asynchronous REST API with OpenAPI documentation, typed Pydantic contracts, and clean dependency injection.
 - **Table-Aware PDF Ingestion**: Detects digital PDF tables using PyMuPDF and converts them into structured GitHub-flavored Markdown. Line-level spatial filtering preserves surrounding prose without duplicating cell text or disrupting natural reading order.
 - **Header-Preserving Table Chunking**: Eliminates table header decapitation. Small tables remain intact within chunks; oversized tables are split row-by-row with column headers and delimiter rows replicated across subsequent chunks to preserve cell-metric relationships for retrieval.
+- **Multi-Format Ingestion**: Supports PDF, DOCX, TXT, and Markdown documents with format validation and immediate background indexing.
 - **Multimodal PDF Understanding**: Automatically extracts embedded raster images and figures from PDFs during ingestion.
 - **VLM Visual Captioning**: Employs an OpenRouter Vision-Language Model (`google/gemini-2.5-flash`) to generate detailed, factual descriptions of diagrams, tables, and charts.
 - **Dense BGE Embeddings**: Generates 384-dimensional dense vector embeddings (`BAAI/bge-small-en-v1.5`) for both text chunks and visual captions.
-- **PostgreSQL + pgvector**: Unified relational metadata and vector database storage with pgvector cosine distance indexing.
-- **Hybrid Text Retrieval**: Combines in-memory BM25 keyword matching with dense vector retrieval using **Reciprocal Rank Fusion (RRF)** for optimal keyword and semantic recall.
+- **PostgreSQL with pgvector**: Unified relational metadata and vector database storage with pgvector cosine distance indexing.
+- **In-Memory BM25 Lexical Retrieval**: Tokenized BM25Okapi search over stored chunks for exact terminology and keyword precision.
+- **Hybrid RRF Retrieval**: Combines dense vector retrieval and in-memory BM25 lexical ranks via scale-invariant **Reciprocal Rank Fusion (RRF)** for optimal recall.
 - **Visual Similarity Search**: Retrieves relevant visual assets independently via cosine similarity search over image caption embeddings.
-- **Unified Cross-Encoder Reranking**: Merges top text chunks and top visual candidates into a single candidate pool and rescores them jointly using `BAAI/bge-reranker-base`.
+- **Cross-Encoder Reranking**: Merges top text chunks and top visual candidates into a unified pool and rescores them jointly using `cross-encoder/ms-marco-MiniLM-L-6-v2`.
 - **Grounded Answer Generation**: Assembles structured prompts with source badges and generates faithful, citation-backed answers via OpenRouter LLM.
 - **Offline Evaluation Suite**: Built-in benchmarking framework calculating Recall@K, Precision@K, and MRR@K against annotated golden datasets.
 
@@ -45,32 +47,32 @@ Beyond standard text-only retrieval, SearchIQ understands text, structured table
 ```text
   Documents (PDF, DOCX, TXT, MD)
                 ↓
-      Multi-format Ingestion
+      Multi-Format Ingestion
                 ↓
   ┌──────────────────────────────────┬──────────────────────┐
   │ Text & Tabular Pipeline          │ Visual Pipeline      │
   │ • Spatial cleaning & filtering   │ • Image extraction   │
   │ • Table detection & Markdown     │ • VLM captioning     │
   │ • Header-preserved row chunking  │ • BGE embeddings     │
-  │ • BGE embeddings                 │ • pgvector           │
-  │ • BM25 + pgvector                │                      │
+  │ • BGE embeddings (384-dim)       │ • pgvector storage   │
+  │ • In-memory BM25 + pgvector      │                      │
   └────────────────┬─────────────────┴──────────┬───────────┘
-             ↓                      ↓
-       Hybrid Text Retrieval   Visual Retrieval
-       (Dense + BM25 → RRF)   (pgvector)
-             └──────────┬───────────┘
-                        ↓
-              Unified Candidate Pool
-             (25 Text + 10 Visual)
-                        ↓
-              Cross-Encoder Reranking
-             (BAAI/bge-reranker-base)
-                        ↓
-                  Prompt Builder
-                        ↓
-                 OpenRouter LLM
-                        ↓
-            Grounded Answer + Citations
+                   ↓                            ↓
+        Hybrid Text Retrieval             Visual Retrieval
+        (Dense + BM25 → RRF)             (pgvector cosine)
+                   └──────────┬─────────────────┘
+                              ↓
+                    Unified Candidate Pool
+                   (25 Text + 10 Visual)
+                              ↓
+                    Cross-Encoder Reranking
+               (ms-marco-MiniLM-L-6-v2)
+                              ↓
+                        Prompt Builder
+                              ↓
+                      OpenRouter LLM
+                              ↓
+                  Grounded Answer + Sources
 ```
 
 ---
@@ -83,8 +85,8 @@ Beyond standard text-only retrieval, SearchIQ understands text, structured table
 | **Database & Vectors** | PostgreSQL 17 + pgvector | Relational metadata + 384-dim vector similarity storage |
 | **ORM & Migrations** | SQLAlchemy 2.0 / Alembic | Type-safe schema definitions and migration management |
 | **Embeddings** | `BAAI/bge-small-en-v1.5` | 384-dimensional dense semantic representations |
-| **Reranker** | `BAAI/bge-reranker-base` | Cross-encoder joint query-context scoring |
-| **Lexical Search** | `rank-bm25` | In-memory BM25 retrieval for exact terminology |
+| **Reranker** | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Sentence Transformers Cross-Encoder joint query-context scoring |
+| **Lexical Search** | `rank-bm25` | In-memory BM25Okapi retrieval for exact terminology |
 | **Document Parsers** | PyMuPDF, python-docx, markdown | Multi-format parsing, table detection/Markdown conversion, and PDF image extraction |
 | **Chunking Engine** | Custom recursive chunker | Page-scoped prose chunking & header-preserving row chunking for large tables |
 | **VLM & LLM** | OpenRouter (`gemini-2.5-flash`) | Visual asset captioning and grounded answer synthesis |
@@ -100,17 +102,16 @@ SearchIQ
 │   ├── alembic/                # Database schema migrations
 │   ├── app
 │   │   ├── api/routes/         # REST API routes (upload, chat, health)
-│   │   ├── chunking/           # Recursive page-aware text chunker
+│   │   ├── chunking/           # Recursive page-aware text & table chunker
 │   │   ├── core/               # App configuration & settings
 │   │   ├── database/           # Session factory & base model
-│   │   ├── embeddings/         # BGE embedding generator
+│   │   ├── embeddings/         # BGE embedding generator (bge-small-en-v1.5)
 │   │   ├── evaluation/         # Retrieval benchmark framework & metrics
 │   │   ├── generation/         # LLM & VLM OpenRouter services
-│   │   ├── ingestion/          # Multi-format & multimodal PDF parsers
+│   │   ├── ingestion/          # Multi-format & table-aware PDF parsers
 │   │   ├── models/             # SQLAlchemy ORM (Document, Chunk, DocumentImage)
 │   │   ├── prompting/          # Context prompt synthesis
-│   │   ├── reranker/           # Cross-Encoder candidate reranker
-│   │   ├── retrieval/          # Hybrid, BM25, vector & visual search services
+│   │   ├── retrieval/          # Dense, in-memory BM25, hybrid RRF, reranker & visual search
 │   │   ├── schemas/            # Pydantic request/response schemas
 │   │   └── services/           # Chat & indexing orchestration services
 │   ├── scripts/                # Evaluation CLI scripts
@@ -288,4 +289,4 @@ pytest
 
 ## Author
 
-**Dhruv Agarwal** — Built to demonstrate end-to-end multimodal retrieval-augmented generation, hybrid lexical/dense search fusion, cross-encoder reranking, and production backend architecture.
+**Dhruv Agarwal** — Built to demonstrate end-to-end multimodal retrieval-augmented generation, hybrid lexical/dense search fusion, cross-encoder reranking, and production-style backend architecture.
